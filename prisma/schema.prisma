@@ -1,0 +1,76 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CLIENT
+  MANAGER
+  FOLLOW_UP_AGENT
+  PAYMENT_AGENT
+}
+
+enum ClientType {
+  STUDENT
+  HIGH_SCHOOL_STUDENT
+  DEVELOPER
+  ENTREPRENEUR
+}
+
+enum RoomType {
+  INDIVIDUAL
+  MULTI_PERSON
+  MEETING
+  TRAINING
+}
+
+model User {
+  id           String      @id @default(cuid())
+  email        String      @unique
+  passwordHash String
+  fullName     String
+  role         Role
+  clientType   ClientType?
+  active       Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+model Room {
+  id        String    @id @default(cuid())
+  name      String
+  type      RoomType
+  capacity  Int
+  /// JSON array of strings, e.g. ["Wi-Fi","projecteur"]
+  equipment String    @default("[]")
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  bookings  Booking[]
+}
+
+model CenterSettings {
+  id                 String   @id @default("singleton")
+  openingTime        String   @default("08:00")
+  closingTime        String   @default("20:00")
+  maxDurationMinutes Int      @default(240)
+  bufferMinutes      Int      @default(15)
+  updatedAt          DateTime @updatedAt
+}
+
+/// Read-only in Sprint 1: only used by the availability search.
+model Booking {
+  id           String   @id @default(cuid())
+  roomId       String
+  startAt      DateTime
+  endAt        DateTime
+  participants Int
+  status       String   @default("CONFIRMED")
+  room         Room     @relation(fields: [roomId], references: [id])
+
+  @@index([roomId, startAt])
+}
